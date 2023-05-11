@@ -1,0 +1,242 @@
+main|
+_____
+
+import pymysql
+from tkinter import *
+from tkinter import ttk
+import tkinter as tk
+from config import *
+import table
+import adm
+import client
+
+connection = pymysql.connect(
+    host=host,
+    user=user,
+    password=password,
+    database=db_name,
+    cursorclass=pymysql.cursors.DictCursor
+)
+
+
+# tree.heading('', text = '')
+
+
+window = Tk()
+window.title('Главное меню')
+window.geometry('800x500+500+200')
+
+b1 = Button(window, text='Фильмы', font='Times 12', width=10, command=table.table_client)
+b1.place(x=115, y=400)
+
+
+b2 = Button(window, text='Админ', font='Times 12', width=10, command=adm.click_adm)
+b2.place(x=315, y=400)
+
+b3 = Button(window, text='Пользователь', font='Times 12', width=10, command=client.user)
+b3.place(x=515, y=400)
+
+window.mainloop()
+
+___________________________
+
+client|
+______
+
+
+import pymysql
+from tkinter import *
+from tkinter import ttk
+import tkinter as tk
+from config import *
+
+connection = pymysql.connect(
+    host=host,
+    user=user,
+    password=password,
+    database=db_name,
+    cursorclass=pymysql.cursors.DictCursor
+)
+
+
+def user():
+    def user1():
+        with connection.cursor() as cur:
+            user_log = format(en_telep.get())
+            log = f"SELECT * FROM client WHERE telephone = '{user_log}'"
+            cur.execute(log)
+            res = cur.fetchall()
+            for i in res:
+                res2 = i['id_client']
+            if res:
+                columns = ('hall_ticket', 'place_ticket', 'date_buy', 'kod_client', 'kod_session')
+                tree = ttk.Treeview(user_win, columns=columns, show='headings')
+                tree.heading('hall_ticket', text='Зал')
+                tree.heading('place_ticket', text='Место')
+                tree.heading('date_buy', text='Дата покупки')
+                tree.heading('kod_client', text='Клиент')
+                tree.heading('kod_session', text='Фильм')
+                users = f"SELECT * FROM ticket, session, client WHERE ticket.kod_client = client.id_client AND ticket.kod_session = session.id_session AND ticket.kod_client = '{res2}'"
+                cur.execute(users)
+                res = cur.fetchall()
+                tree.place(x=1, y=1)
+                for row in res:
+                    a = (row['hall_ticket'])
+                    b = (row['place_ticket'])
+                    c = (row['date_buy'])
+                    d = (row['fio'])
+                    e = (row['film_session'])
+                    f = [(a), (b), (c), (d), (e)]
+                    tree.insert("", tk.END, values=(f))
+
+    user_win = Tk()
+    user_win.title('Вход пользователя')
+    user_win.geometry('1200x600+500+300')
+
+    but_telep = Button(user_win, font='Times 16', text='Ввести', command=user1)
+    but_telep.place(x=100, y=300)
+    en_telep = Entry(user_win, font='Times 16')
+    en_telep.place(x=300, y=300)
+
+    user_win.mainloop()
+
+______________________________
+
+adm|
+____
+
+import pymysql
+from tkinter import *
+from tkinter import ttk
+import tkinter as tk
+from config import *
+
+connection = pymysql.connect(
+    host=host,
+    user=user,
+    password=password,
+    database=db_name,
+    cursorclass=pymysql.cursors.DictCursor
+)
+
+
+def click_adm():
+    def click_adm1():
+        with connection.cursor() as cur:
+            adm_log = format(en_log.get())
+            adm_pass = format(en_pass.get())
+            log = f"SELECT * FROM admin WHERE log = '{adm_log}' AND pass = '{adm_pass}'"
+            cur.execute(log)
+            res = cur.fetchall()
+            if res:
+                adm_win.destroy()
+                adm_win1 = Tk()
+                adm_win1.title('Данные о клиентах')
+                adm_win1.geometry('1200x500+500+300')
+                adm_win1.configure(bg='grey')
+
+                def add():
+                    fio_add = format(en_add_fio.get())
+                    tele_add = format(en_add_tel.get())
+                    passp_add = format(en_add_passp.get())
+                    adds = f"INSERT INTO client (fio, telephone, passport) VALUES ('{fio_add}', '{tele_add}', '{passp_add}')"
+                    cur.execute(adds)
+                    connection.commit()
+
+                en_add_fio = Entry(adm_win1, font='Times 16')
+                en_add_fio.place(x=800, y=100)
+                en_add_tel = Entry(adm_win1, font='Times 16')
+                en_add_tel.place(x=800, y=150)
+                en_add_passp = Entry(adm_win1, font='Times 16')
+                en_add_passp.place(x=800, y=200)
+                lb_add_fio = Label(adm_win1, font='Times 16', bg='grey', text='ФИО')
+                lb_add_fio.place(x=650, y=100)
+                lb_add_tel = Label(adm_win1, font='Times 16', bg='grey', text='Телефон')
+                lb_add_tel.place(x=650, y=150)
+                lb_add_passp = Label(adm_win1, font='Times 16', bg='grey', text='Паспорт')
+                lb_add_passp.place(x=650, y=200)
+                but_add = Button(adm_win1, font='Times 16', text='Внести клиента', command=add)
+                but_add.place(x=400, y=300)
+                columns = ('fio', 'telephone', 'passport')
+                tree = ttk.Treeview(adm_win1, columns=columns, show='headings')
+                tree.heading('fio', text='ФИО')
+                tree.heading('telephone', text='Номер телефона')
+                tree.heading('passport', text='Паспорт')
+                clients = f"SELECT * FROM client"
+                cur.execute(clients)
+                res = cur.fetchall()
+                tree.place(x=1, y=1)
+                for row in res:
+                    a = (row['fio'])
+                    b = (row['telephone'])
+                    c = (row['passport'])
+                    d = [(a), (b), (c)]
+                    tree.insert("", tk.END, values=(d))
+                adm_win1.mainloop()
+
+    adm_win = Tk()
+    adm_win.title('Вход администратора')
+    adm_win.geometry('400x400+500+300')
+
+    b_adm = Button(adm_win, text='Вход', font='Times 12', width=15, command=click_adm1)
+    b_adm.place(x=150, y=300)
+
+    en_log = Entry(adm_win, font='Times 16')
+    en_log.place(x=100, y=100)
+
+    en_pass = Entry(adm_win, font='Times 16')
+    en_pass.place(x=100, y=200)
+
+____________________
+
+table|
+______
+import pymysql
+from tkinter import *
+from tkinter import ttk
+import tkinter as tk
+from config import *
+
+connection = pymysql.connect(
+    host=host,
+    user=user,
+    password=password,
+    database=db_name,
+    cursorclass=pymysql.cursors.DictCursor
+)
+
+
+def table_client():
+    with connection.cursor() as cur:
+        columns = ('date_session', 'time_session', 'film_session', 'kod_genre')
+        tree = ttk.Treeview(columns=columns, show='headings')
+        tree.heading('date_session', text='Дата сеанса')
+        tree.heading('time_session', text='Время сеанса')
+        tree.heading('film_session', text='Фильм')
+        tree.heading('kod_genre', text='Жанр')
+        films = f"SELECT * FROM session, genre WHERE session.kod_genre=genre.id_genre"
+        cur.execute(films)
+        res = cur.fetchall()
+        tree.place(x=1, y=1)
+        for row in res:
+            a = (row['date_session'])
+            b = (row['time_session'])
+            c = (row['film_session'])
+            d = (row['name_genre'])
+            e = [(a), (b), (c), (d)]
+            tree.insert("", tk.END, values=(e))
+
+
+__________________
+
+config|
+_______
+
+
+host = 'localhost'
+user = 'root'
+password = 'root'
+db_name = 'cinema'
+
+
+бил1
